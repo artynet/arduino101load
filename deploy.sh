@@ -19,7 +19,7 @@ do
    rm -rf bin
    mkdir bin
    IFS=_ read -a fields <<< $folder
-   GOOS=${fields[0]} GOARCH=${fields[1]} go build
+   GOOS=${fields[0]} GOARCH=${fields[1]} go build -o arduinoSTM32load
    FILENAME=arduinoSTM32load-${VERSION}-${folder}.tar.bz2
    cp -r  arduinoSTM32load* bin
    tar cjvf ${FILENAME} bin/
