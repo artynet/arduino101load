@@ -2,10 +2,8 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"github.com/mattn/go-shellwords"
-	"github.com/tj/go-spin"
 	"io"
 	"io/ioutil"
 	"os"
@@ -16,75 +14,79 @@ import (
 	"time"
 )
 
-var (
-	verbose                = flag.Bool("v", false, "Show verbose logging")
-	quiet                  = flag.Bool("q", true, "Show quiet logging")
-	force                  = flag.Bool("f", false, "Force firmware update")
-	copier                 = flag.Bool("c", false, "Copy bin_file to bin_save")
-	core                   = flag.String("core", "", "Core version")
-	from                   = flag.String("from", "", "Original file location")
-	to                     = flag.String("to", "", "Save file location")
-	dfu_path               = flag.String("dfu", "", "Location of dfu-util binaries")
-	bin_file_name          = flag.String("bin", "", "Location of sketch binary")
-	com_port               = flag.String("port", "", "Upload serial port")
-)
-
-const Version = "2.0.0"
-
-const dfu_flags = "-d,0483:df11"
+var verbose bool
 
 func PrintlnVerbose(a ...interface{}) {
-	if *verbose {
+	if verbose {
 		fmt.Println(a...)
 	}
 }
 
-func PrintVerbose(a ...interface{}) {
-	if *verbose {
-		fmt.Print(a...)
-	}
-}
+func main_load(args []string) {
 
-func main_load() {
+	// ARG 1: Path to binaries
+	// ARG 2: BIN File to download
+	// ARG 3: TTY port to use.
+	// ARG 4: quiet/verbose
+	// path may contain \ need to change all to /
 
-	if *dfu_path == "" {
-		fmt.Println("Need to specify dfu-util location")
+	if len(args) < 4 {
+		fmt.Println("Not enough arguments")
 		os.Exit(1)
 	}
 
-	if *bin_file_name == "" && *force == false {
-		fmt.Println("Need to specify a binary location or force FW update")
-		os.Exit(1)
-	}
-
-	// Remove ""s from the strings
-	*dfu_path = strings.Replace(*dfu_path, "\"", "", -1)
-	*bin_file_name = strings.Replace(*bin_file_name, "\"", "", -1)
-
-	dfu := *dfu_path + "/dfu-util"
+	bin_path := args[0]
+	dfu := bin_path + "/dfu-util"
 	dfu = filepath.ToSlash(dfu)
+	dfu_flags := "-d,8087:0ABA"
 
-	PrintlnVerbose("Serial Port: " + *com_port)
-	PrintlnVerbose("BIN FILE " + *bin_file_name)
+	bin_file_name := args[1]
+
+	com_port := args[2]
+	verbosity := args[3]
+
+	ble_compliance_string := ""
+	ble_compliance_offset := ""
+	if len(args) >= 5 {
+		// Called by post 1.0.6 platform.txt
+		ble_compliance_string = args[4]
+		ble_compliance_offset = args[5]
+	}
+
+	if verbosity == "quiet" {
+		verbose = false
+	} else {
+		verbose = true
+	}
+
+	PrintlnVerbose("Args to shell:", args)
+	PrintlnVerbose("Serial Port: " + com_port)
+	PrintlnVerbose("BIN FILE " + bin_file_name)
 
 	counter := 0
 	board_found := false
 
+	if runtime.GOOS == "darwin" {
+		library_path := os.Getenv("DYLD_LIBRARY_PATH")
+		if !strings.Contains(library_path, bin_path) {
+			os.Setenv("DYLD_LIBRARY_PATH", bin_path+":"+library_path)
+		}
+	}
+
 	dfu_search_command := []string{dfu, dfu_flags, "-l"}
-	var err error
 
 	for counter < 100 && board_found == false {
 		if counter%10 == 0 {
 			PrintlnVerbose("Waiting for device...")
 		}
-		err, found, _ := launchCommandAndWaitForOutput(dfu_search_command, "Internal", false, false)
+		err, found, _ := launchCommandAndWaitForOutput(dfu_search_command, "sensor_core", false)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 		if counter == 40 {
 			fmt.Println("Flashing is taking longer than expected")
-			// fmt.Println("Try pressing MASTER_RESET button")
+			fmt.Println("Try pressing MASTER_RESET button")
 		}
 		if found == true {
 			board_found = true
@@ -96,44 +98,62 @@ func main_load() {
 	}
 
 	if board_found == false {
-		fmt.Println("ERROR: Timed out waiting for Arduino Star OTTO on " + *com_port)
+		fmt.Println("ERROR: Timed out waiting for Arduino 101 on " + com_port)
 		os.Exit(1)
 	}
 
-	// Finally flash the sketch
+	if ble_compliance_string != "" {
 
-	if *bin_file_name == "" {
-		os.Exit(0)
+		// obtain a temporary filename
+		tmpfile, _ := ioutil.TempFile(os.TempDir(), "dfu")
+		tmpfile.Close()
+		os.Remove(tmpfile.Name())
+
+		// reset DFU interface counter
+		dfu_reset_command := []string{dfu, dfu_flags, "-U", tmpfile.Name(), "--alt", "8", "-K", "1"}
+
+		err, _, _ := launchCommandAndWaitForOutput(dfu_reset_command, "", false)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		os.Remove(tmpfile.Name())
+
+		// download a piece of BLE firmware
+		dfu_ble_dump_command := []string{dfu, dfu_flags, "-U", tmpfile.Name(), "--alt", "8", "-K", ble_compliance_offset}
+
+		err, _, _ = launchCommandAndWaitForOutput(dfu_ble_dump_command, "", false)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		// check for BLE library compliance
+		PrintlnVerbose("Verifying BLE version:", ble_compliance_string)
+		found := searchBLEversionInDFU(tmpfile.Name(), ble_compliance_string)
+
+		// remove the temporary file
+		os.Remove(tmpfile.Name())
+
+		if !found {
+			fmt.Println("!! BLE firmware version is not in sync with CurieBLE library !!")
+                        fmt.Println("* Set Programmer to \"Arduino/Genuino 101 Firmware Updater\"")
+			fmt.Println("* Update it using \"Burn Bootloader\" menu")
+			os.Exit(1)
+		}
+		PrintlnVerbose("BLE version: verified")
+
 	}
 
-	// 9600 trick linux
-
-	if runtime.GOOS == "linux" {    // also can be specified to FreeBSD
-		fmt.Println("Unix/Linux type OS detected")
-		trick_9600 := []string{"stty", "-F", *com_port, "9600"}
-		err, _, _ = launchCommandAndWaitForOutput(trick_9600, "", true, false)
-	}
-
-	// time.Sleep(3 * time.Second)
-
-	// dfu-util reference string
-	// dfu_download := []string{dfu, dfu_flags, "-D", *bin_file_name, "-v", "--alt", "7", "-R"}
-
-	// dfu-util v0.9
-	// dfu_download := []string{dfu, dfu_flags, "-a", "0", "-O", *bin_file_name, "-s", "0x08000000", "-f", "0x08000000"}
-	// err, _, _ = launchCommandAndWaitForOutput(dfu_download, "", true, false)
-
-	// dfu-util v0.8
-	dfu_download := []string{dfu, dfu_flags, "-a", "0", "-D", *bin_file_name, "-s", "0x08000000"}
-	dfu_resetstm32 := []string{dfu, dfu_flags, "-a", "0", "--reset-stm32"}
-	err, _, _ = launchCommandAndWaitForOutput(dfu_download, "", true, false)
-	err, _, _ = launchCommandAndWaitForOutput(dfu_resetstm32, "", true, false)
+	dfu_download := []string{dfu, dfu_flags, "-D", bin_file_name, "-v", "--alt", "7", "-R"}
+	err, _, _ := launchCommandAndWaitForOutput(dfu_download, "", true)
 
 	if err == nil {
 		fmt.Println("SUCCESS: Sketch will execute in about 5 seconds.")
 		os.Exit(0)
 	} else {
-		fmt.Println("ERROR: Upload failed on " + *com_port)
+		fmt.Println("ERROR: Upload failed on " + com_port)
 		os.Exit(1)
 	}
 }
@@ -145,7 +165,7 @@ func main_debug(args []string) {
 		os.Exit(1)
 	}
 
-	*verbose = true
+	verbose = true
 
 	type Command struct {
 		command    string
@@ -173,7 +193,7 @@ func main_debug(args []string) {
 		cmd, _ := shellwords.Parse(command.command)
 		fmt.Println(cmd)
 		if command.background == false {
-			err, _, _ = launchCommandAndWaitForOutput(cmd, "", true, false)
+			err, _, _ = launchCommandAndWaitForOutput(cmd, "", true)
 		} else {
 			err, _ = launchCommandBackground(cmd, "", true)
 		}
@@ -186,108 +206,51 @@ func main_debug(args []string) {
 }
 
 func main() {
-	name := filepath.Base(os.Args[0])
-
-	flag.Parse()
-
-	PrintlnVerbose(name + " " + Version + " - compiled with " + runtime.Version())
-
-	if *copier {
-		if *from == "" || *to == "" {
-			fmt.Println("ERROR: need -from and -to arguments")
-			os.Exit(1)
-		}
-		*from = strings.Replace(*from, "\"", "", -1)
-		*to = strings.Replace(*to, "\"", "", -1)
-		copy(*from, *to)
-		os.Exit(0)
-	}
+	name := os.Args[0]
+	args := os.Args[1:]
 
 	if strings.Contains(name, "load") {
 		fmt.Println("Starting download script...")
-		main_load()
+		main_load(args)
 	}
 
 	if strings.Contains(name, "debug") {
 		fmt.Println("Starting debug script...")
-		main_debug(os.Args[1:])
+		main_debug(args)
 	}
 
 	fmt.Println("Wrong executable name")
 	os.Exit(1)
 }
 
-// Copy a file
-func copy(source, destination string) {
-	// Open original file
-	originalFile, err := os.Open(source)
-	if err != nil {
-		os.Exit(1)
-	}
-	defer originalFile.Close()
-
-	// Create new file
-	newFile, err := os.Create(destination)
-	if err != nil {
-		os.Exit(1)
-	}
-	defer newFile.Close()
-
-	// Copy the bytes to destination from source
-	_, err = io.Copy(newFile, originalFile)
-	if err != nil {
-		os.Exit(1)
-	}
-
-	// Commit the file contents
-	// Flushes memory to disk
-	err = newFile.Sync()
-	if err != nil {
-		os.Exit(1)
-	}
-}
-
-func searchVersionInDFU(file string, string_to_search string) bool {
+func searchBLEversionInDFU(file string, string_to_search string) bool {
 	read, _ := ioutil.ReadFile(file)
 	return strings.Contains(string(read), string_to_search)
 }
 
-func launchCommandAndWaitForOutput(command []string, stringToSearch string, print_output bool, show_spinner bool) (error, bool, string) {
+func launchCommandAndWaitForOutput(command []string, stringToSearch string, print_output bool) (error, bool, string) {
 	oscmd := exec.Command(command[0], command[1:]...)
 	tellCommandNotToSpawnShell(oscmd)
 	stdout, _ := oscmd.StdoutPipe()
 	stderr, _ := oscmd.StderrPipe()
-	multi := io.MultiReader(stdout, stderr)
-
-	s := spin.New()
-	s.Set(spin.Spin1)
-
-	if print_output && *verbose {
-		oscmd.Stdout = os.Stdout
-		oscmd.Stderr = os.Stderr
-	}
+	multi := io.MultiReader(stderr, stdout)
 	err := oscmd.Start()
 	in := bufio.NewScanner(multi)
-	in.Split(bufio.ScanRunes)
+	in.Split(bufio.ScanLines)
 	found := false
 	out := ""
 	for in.Scan() {
-
-		if show_spinner {
-			fmt.Printf("\r %s", s.Next())
+		if print_output {
+			PrintlnVerbose(in.Text())
 		}
-
-		out += in.Text()
+		out += in.Text() + "\n"
 		if stringToSearch != "" {
-			if strings.Contains(out, stringToSearch) {
+			if strings.Contains(in.Text(), stringToSearch) {
 				found = true
 			}
 		}
 	}
 	err = oscmd.Wait()
-	if show_spinner {
-		fmt.Println("")
-	}
 	return err, found, out
 }
 
