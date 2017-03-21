@@ -70,8 +70,20 @@ func main_load() {
 	counter := 0
 	board_found := false
 
-	dfu_search_command := []string{dfu, dfu_flags, "-l"}
 	var err error
+
+	// 9600 trick linux
+
+	if runtime.GOOS == "linux" {    // also can be specified to FreeBSD
+		fmt.Println("Unix/Linux type OS detected")
+		trick_9600 := []string{"/bin/stty", "-F", *com_port, "9600"}
+		err, _, _ = launchCommandAndWaitForOutput(trick_9600, "", true, false)
+		time.Sleep(2 * time.Second)
+	}
+
+	// detecting DFU mode of STM32
+
+	dfu_search_command := []string{dfu, dfu_flags, "-l"}
 
 	for counter < 100 && board_found == false {
 		if counter%10 == 0 {
@@ -104,14 +116,6 @@ func main_load() {
 
 	if *bin_file_name == "" {
 		os.Exit(0)
-	}
-
-	// 9600 trick linux
-
-	if runtime.GOOS == "linux" {    // also can be specified to FreeBSD
-		fmt.Println("Unix/Linux type OS detected")
-		trick_9600 := []string{"stty", "-F", *com_port, "9600"}
-		err, _, _ = launchCommandAndWaitForOutput(trick_9600, "", true, false)
 	}
 
 	// time.Sleep(3 * time.Second)
