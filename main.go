@@ -38,20 +38,12 @@ func main_load(args []string) {
 	bin_path := args[0]
 	dfu := bin_path + "/dfu-util"
 	dfu = filepath.ToSlash(dfu)
-	dfu_flags := "-d,8087:0ABA"
+	dfu_flags := "-d,0483:df11"
 
 	bin_file_name := args[1]
 
 	com_port := args[2]
 	verbosity := args[3]
-
-	ble_compliance_string := ""
-	ble_compliance_offset := ""
-	if len(args) >= 5 {
-		// Called by post 1.0.6 platform.txt
-		ble_compliance_string = args[4]
-		ble_compliance_offset = args[5]
-	}
 
 	if verbosity == "quiet" {
 		verbose = false
@@ -79,7 +71,7 @@ func main_load(args []string) {
 		if counter%10 == 0 {
 			PrintlnVerbose("Waiting for device...")
 		}
-		err, found, _ := launchCommandAndWaitForOutput(dfu_search_command, "sensor_core", false)
+		err, found, _ := launchCommandAndWaitForOutput(dfu_search_command, "Internal", false)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -102,54 +94,37 @@ func main_load(args []string) {
 		os.Exit(1)
 	}
 
-	if ble_compliance_string != "" {
+	// 9600 trick linux
 
-		// obtain a temporary filename
-		tmpfile, _ := ioutil.TempFile(os.TempDir(), "dfu")
-		tmpfile.Close()
-		os.Remove(tmpfile.Name())
-
-		// reset DFU interface counter
-		dfu_reset_command := []string{dfu, dfu_flags, "-U", tmpfile.Name(), "--alt", "8", "-K", "1"}
-
-		err, _, _ := launchCommandAndWaitForOutput(dfu_reset_command, "", false)
+	if runtime.GOOS == "linux" {    // also can be specified to FreeBSD
+		fmt.Println("Unix/Linux type OS detected")
+		trick_9600 := []string{"stty", "-F", com_port, "9600"}
+		err, _, _ := launchCommandAndWaitForOutput(trick_9600, "", true)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-
-		os.Remove(tmpfile.Name())
-
-		// download a piece of BLE firmware
-		dfu_ble_dump_command := []string{dfu, dfu_flags, "-U", tmpfile.Name(), "--alt", "8", "-K", ble_compliance_offset}
-
-		err, _, _ = launchCommandAndWaitForOutput(dfu_ble_dump_command, "", false)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		// check for BLE library compliance
-		PrintlnVerbose("Verifying BLE version:", ble_compliance_string)
-		found := searchBLEversionInDFU(tmpfile.Name(), ble_compliance_string)
-
-		// remove the temporary file
-		os.Remove(tmpfile.Name())
-
-		if !found {
-			fmt.Println("!! BLE firmware version is not in sync with CurieBLE library !!")
-                        fmt.Println("* Set Programmer to \"Arduino/Genuino 101 Firmware Updater\"")
-			fmt.Println("* Update it using \"Burn Bootloader\" menu")
-			os.Exit(1)
-		}
-		PrintlnVerbose("BLE version: verified")
-
 	}
 
-	dfu_download := []string{dfu, dfu_flags, "-D", bin_file_name, "-v", "--alt", "7", "-R"}
-	err, _, _ := launchCommandAndWaitForOutput(dfu_download, "", true)
+	// time.Sleep(3 * time.Second)
 
-	if err == nil {
+	// dfu-util reference string
+	// dfu_download := []string{dfu, dfu_flags, "-D", *bin_file_name, "-v", "--alt", "7", "-R"}
+
+	// dfu-util v0.9
+	// dfu_download := []string{dfu, dfu_flags, "-a", "0", "-O", *bin_file_name, "-s", "0x08000000", "-f", "0x08000000"}
+	// err, found, _ := launchCommandAndWaitForOutput(dfu_download, "", true)
+
+	// dfu-util v0.8
+	dfu_download := []string{dfu, dfu_flags, "-a", "0", "-D", bin_file_name, "-s", "0x08000000"}
+	dfu_resetstm32 := []string{dfu, dfu_flags, "-a", "0", "--reset-stm32"}
+	err_down, _, _ := launchCommandAndWaitForOutput(dfu_download, "", true)
+	err_reset, _, _ := launchCommandAndWaitForOutput(dfu_resetstm32, "", true)
+
+	if err_down == nil {
+		fmt.Println("SUCCESS: Sketch has been successfully uploaded.")
+		os.Exit(0)
+	} else if err_reset == nil {
 		fmt.Println("SUCCESS: Sketch will execute in about 5 seconds.")
 		os.Exit(0)
 	} else {
