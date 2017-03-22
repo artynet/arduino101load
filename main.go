@@ -129,8 +129,9 @@ func main_load() {
 
 	// dfu-util v0.8
 	dfu_download := []string{dfu, dfu_flags, "-a", "0", "-D", *bin_file_name, "-s", "0x08000000"}
-	dfu_resetstm32 := []string{dfu, dfu_flags, "-a", "0", "--reset-stm32"}
 	err, _, _ = launchCommandAndWaitForOutput(dfu_download, "", true, false)
+
+	dfu_resetstm32 := []string{dfu, dfu_flags, "-a", "0", "--reset-stm32"}
 	err, _, _ = launchCommandAndWaitForOutput(dfu_resetstm32, "", true, false)
 
 	if err == nil {
