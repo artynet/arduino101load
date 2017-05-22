@@ -30,6 +30,13 @@
               "size": "%%SIZE_LINUX_386%%",
               "checksum": "SHA-256:%%SHA_LINUX_386%%"
             },
+						{
+              "host": "mips-linux-gnu",
+              "url": "http://downloads.arduino.cc/tools/%%FILENAME_LINUX_MIPS%%",
+              "archiveFileName": "%%FILENAME_LINUX_MIPS%%",
+              "size": "%%SIZE_LINUX_MIPS%%",
+              "checksum": "SHA-256:%%SHA_LINUX_MIPS%%"
+            },
             {
               "host": "i686-mingw32",
               "url": "http://downloads.arduino.cc/tools/%%FILENAME_WINDOWS_386%%",
