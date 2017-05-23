@@ -77,8 +77,9 @@ func main_load() {
 		}
 	}
 
-	// 9600 trick linux
 	var err error
+
+	// 9600 trick linux
 
 	if runtime.GOOS == "linux" {    // also can be specified to FreeBSD
 		fmt.Println("Unix/Linux type OS detected")
