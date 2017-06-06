@@ -21,7 +21,7 @@ do
    IFS=_ read -a fields <<< $folder
    GOOS=${fields[0]} GOARCH=${fields[1]} go build -o arduinoSTM32load
    FILENAME=arduinoSTM32load-${VERSION}-${folder}.tar.bz2
-   cp -r  arduinoSTM32load* firmwares/ bin
+   cp -r  arduinoSTM32load* bin
    tar cjvf ${FILENAME} bin/
    T_OS=`echo ${folder} | awk '{print toupper($0)}'`
    SHASUM=`sha256sum ${FILENAME} | cut -f1 -d" "`
