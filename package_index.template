@@ -17,6 +17,13 @@
               "checksum": "SHA-256:%%SHA_LINUX_ARM%%"
             },
             {
+              "host": "arm64-linux-gnu",
+              "url": "http://download.arduino.org/tools/%%FILENAME_LINUX_ARM64%%",
+              "archiveFileName": "%%FILENAME_LINUX_ARM64%%",
+              "size": "%%SIZE_LINUX_ARM64%%",
+              "checksum": "SHA-256:%%SHA_LINUX_ARM64%%"
+            },
+            {
               "host": "mips-linux-gnu",
               "url": "http://download.arduino.org/tools/%%FILENAME_LINUX_MIPS%%",
               "archiveFileName": "%%FILENAME_LINUX_MIPS%%",
