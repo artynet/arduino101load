@@ -91,6 +91,8 @@ builds:
     goarch:
       - amd64
       - 386
+      - mips
+      - mipsle
     ldflags:
       - -s -w -X github.com/facchinm/arduino101load/version.versionString={{.Tag}} -X github.com/facchinm/arduino101load/version.commit={{ .ShortCommit }}
       - "-extldflags '-static'"
