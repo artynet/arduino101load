@@ -21,8 +21,8 @@ changelog:
 builds:
   -
     # OSX
-    id: arduino_cli_osx
-    binary: arduino-cli
+    id: arduino101load_osx
+    binary: arduino101load
     env:
       - CGO_ENABLED=1
       - CXXFLAGS="-mmacosx-version-min=10.10"
@@ -32,11 +32,11 @@ builds:
     goarch:
       - amd64
     ldflags:
-      - -s -w -X github.com/arduino/arduino-cli/version.versionString={{.Tag}} -X github.com/arduino/arduino-cli/version.commit={{ .ShortCommit }}
+      - -s -w -X github.com/facchinm/arduino101load/version.versionString={{.Tag}} -X github.com/facchinm/arduino101load/version.commit={{ .ShortCommit }}
   -
     # ARM
-    id: arduino_cli_arm
-    binary: arduino-cli
+    id: arduino101load_arm
+    binary: arduino101load
     env:
       - CGO_ENABLED=1
       - CC=/usr/arm-linux-gnueabi/bin/cc
@@ -47,12 +47,12 @@ builds:
     goarm:
       - 6
     ldflags:
-      - -s -w -X github.com/arduino/arduino-cli/version.versionString={{.Tag}} -X github.com/arduino/arduino-cli/version.commit={{ .ShortCommit }}
+      - -s -w -X github.com/facchinm/arduino101load/version.versionString={{.Tag}} -X github.com/facchinm/arduino101load/version.commit={{ .ShortCommit }}
       - "-extldflags '-static'"
   -
     # ARMv7
-    id: arduino_cli_armv7
-    binary: arduino-cli
+    id: arduino101load_armv7
+    binary: arduino101load
     env:
       - CGO_ENABLED=1
       - CC=/usr/arm-linux-gnueabihf/bin/cc
@@ -63,12 +63,12 @@ builds:
     goarm:
       - 7
     ldflags:
-      - -s -w -X github.com/arduino/arduino-cli/version.versionString={{.Tag}} -X github.com/arduino/arduino-cli/version.commit={{ .ShortCommit }}
+      - -s -w -X github.com/facchinm/arduino101load/version.versionString={{.Tag}} -X github.com/facchinm/arduino101load/version.commit={{ .ShortCommit }}
       - "-extldflags '-static'"
   -
     # ARM64
-    id: arduino_cli_arm64
-    binary: arduino-cli
+    id: arduino101load_arm64
+    binary: arduino101load
     env:
       - CGO_ENABLED=1
       - CC=/usr/aarch64-linux-gnu/bin/cc
@@ -77,12 +77,12 @@ builds:
     goarch:
       - arm64
     ldflags:
-      - -s -w -X github.com/arduino/arduino-cli/version.versionString={{.Tag}} -X github.com/arduino/arduino-cli/version.commit={{ .ShortCommit }}
+      - -s -w -X github.com/facchinm/arduino101load/version.versionString={{.Tag}} -X github.com/facchinm/arduino101load/version.commit={{ .ShortCommit }}
       - "-extldflags '-static'"
   -
     # All the other platforms
-    id: arduino_cli
-    binary: arduino-cli
+    id: arduino101load
+    binary: arduino101load
     env:
       - CGO_ENABLED=0
     goos:
@@ -92,12 +92,12 @@ builds:
       - amd64
       - 386
     ldflags:
-      - -s -w -X github.com/arduino/arduino-cli/version.versionString={{.Tag}} -X github.com/arduino/arduino-cli/version.commit={{ .ShortCommit }}
+      - -s -w -X github.com/facchinm/arduino101load/version.versionString={{.Tag}} -X github.com/facchinm/arduino101load/version.commit={{ .ShortCommit }}
       - "-extldflags '-static'"
 
 archives:
   -
-    id: "arduino_cli"
+    id: "arduino101load"
     format: tar.gz
     format_overrides:
       - goos: windows
@@ -119,5 +119,5 @@ blob:
     provider: s3
     bucket: arduino-downloads-prod-beagle
     ids:
-      - arduino_cli
+      - arduino101load
     folder: "{{ .ProjectName }}"
