@@ -24,9 +24,7 @@ builds:
     id: arduino101load_osx
     binary: arduino101load
     env:
-      - CGO_ENABLED=1
-      - CXXFLAGS="-mmacosx-version-min=10.10"
-      - CC=/usr/x86_64-apple-darwin14/bin/cc
+      - CGO_ENABLED=0
     goos:
       - darwin
     goarch:
@@ -38,8 +36,7 @@ builds:
     id: arduino101load_arm
     binary: arduino101load
     env:
-      - CGO_ENABLED=1
-      - CC=/usr/arm-linux-gnueabi/bin/cc
+      - CGO_ENABLED=0
     goos:
       - linux
     goarch:
@@ -54,8 +51,7 @@ builds:
     id: arduino101load_armv7
     binary: arduino101load
     env:
-      - CGO_ENABLED=1
-      - CC=/usr/arm-linux-gnueabihf/bin/cc
+      - CGO_ENABLED=0
     goos:
       - linux
     goarch:
@@ -70,8 +66,7 @@ builds:
     id: arduino101load_arm64
     binary: arduino101load
     env:
-      - CGO_ENABLED=1
-      - CC=/usr/aarch64-linux-gnu/bin/cc
+      - CGO_ENABLED=0
     goos:
       - linux
     goarch:
