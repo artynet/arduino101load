@@ -1,9 +1,11 @@
 # Global section
+project_name: arduinoSTM32load
+
 checksum:
-  name_template: '{{ .Tag }}-{{ time "20060102" }}-checksums.txt'
+  name_template: '{{ .ProjectName }}_g{{ .ShortCommit }}-{{ time "20060102" }}-checksums.txt'
 
 snapshot:
-  name_template: 'g{{.ShortCommit}}'
+  name_template: 'g{{ .ShortCommit }}'
 
 release:
   prerelease: auto
