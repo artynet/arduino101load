@@ -1,0 +1,122 @@
+# Global section
+project_name: arduinoSTM32load
+
+checksum:
+  name_template: '{{ .ProjectName }}_g{{ .ShortCommit }}-{{ time "20060102" }}-checksums.txt'
+
+snapshot:
+  name_template: 'g{{ .ShortCommit }}'
+
+release:
+  prerelease: auto
+
+changelog:
+  filters:
+    exclude:
+      - '^\[skip changelog\].*'
+      - '^\[changelog skip\].*'
+      - '^\[skip ci\].*'
+      - '^\[ci skip\].*'
+
+# We have multiple builds in order to fine tune
+# cross compilations.
+builds:
+  -
+    # OSX
+    id: arduinoSTM32load_osx
+    binary: arduinoSTM32load
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    ldflags:
+      - -s -w -X github.com/artynet/arduino101load/version.versionString={{.Tag}} -X github.com/artynet/arduino101load/version.commit={{ .ShortCommit }}
+  -
+    # ARM
+    id: arduinoSTM32load_arm
+    binary: arduinoSTM32load
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - 6
+    ldflags:
+      - -s -w -X github.com/artynet/arduino101load/version.versionString={{.Tag}} -X github.com/artynet/arduino101load/version.commit={{ .ShortCommit }}
+      - "-extldflags '-static'"
+  -
+    # ARMv7
+    id: arduinoSTM32load_armv7
+    binary: arduinoSTM32load
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - arm
+    goarm:
+      - 7
+    ldflags:
+      - -s -w -X github.com/artynet/arduino101load/version.versionString={{.Tag}} -X github.com/artynet/arduino101load/version.commit={{ .ShortCommit }}
+      - "-extldflags '-static'"
+  -
+    # ARM64
+    id: arduinoSTM32load_arm64
+    binary: arduinoSTM32load
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - arm64
+    ldflags:
+      - -s -w -X github.com/artynet/arduino101load/version.versionString={{.Tag}} -X github.com/artynet/arduino101load/version.commit={{ .ShortCommit }}
+      - "-extldflags '-static'"
+  -
+    # All the other platforms
+    id: arduinoSTM32load
+    binary: arduinoSTM32load
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - 386
+      - mips
+      - mipsle
+    ldflags:
+      - -s -w -X github.com/artynet/arduino101load/version.versionString={{.Tag}} -X github.com/artynet/arduino101load/version.commit={{ .ShortCommit }}
+      - "-extldflags '-static'"
+
+archives:
+  -
+    id: "arduinoSTM32load"
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    replacements:
+      amd64: 64bit
+      darwin: macOS
+      386: 32bit
+      arm: ARM
+      arm64: ARM64
+      linux: Linux
+      windows: Windows
+    files:
+      - README.md
+      - LICENSE.txt
+
+blobs:
+  -
+    provider: s3
+    bucket: arduino-downloads-prod-beagle
+    ids:
+      - arduinoSTM32load
+    folder: "{{ .ProjectName }}"
