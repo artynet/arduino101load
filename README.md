@@ -1,5 +1,5 @@
-# arduino101load
-multiplatform launcher for Arduino101 dfu-util flashing utility
+# arduinoSTM32load
+multiplatform launcher for ArduinoSTM32 dfu-util flashing utility
 
 ## Compiling
 
@@ -11,7 +11,7 @@ export GOPATH=$PWD
 go get
 go build
 ```
-to produce a binary of `arduino101load` for your architecture.
+to produce a binary of `arduinoSTM32load` for your architecture.
 
 To cross compile for different OS/architecture combinations, execute
 ```bash
