@@ -2,10 +2,6 @@
 
 VERSION=`cat main.go| grep "const Version" |cut -f4 -d " " | tr -d '"'`
 
-#Remember to set GOROOT accordingly with your installation
-
-export GOPATH=$PWD
-
 declare -a target_folders=("linux_amd64" "linux_386" "linux_arm" "linux_arm64" "linux_mips" "darwin_amd64" "windows_386")
 
 rm -rf distrib
@@ -19,7 +15,7 @@ do
    rm -rf bin
    mkdir bin
    IFS=_ read -a fields <<< $folder
-   GOOS=${fields[0]} GOARCH=${fields[1]} go build
+   GOOS=${fields[0]} GOARCH=${fields[1]} go build -o arduinoSTM32load
    FILENAME=arduinoSTM32load-${VERSION}-${folder}.tar.bz2
    cp -r  arduinoSTM32load* bin
    tar cjvf ${FILENAME} bin/
