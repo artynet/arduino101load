@@ -112,7 +112,7 @@ func main_load() {
 	}
 
 	if board_found == false {
-		fmt.Println("ERROR: Timed out waiting for Arduino Star OTTO on on " + *com_port)
+		fmt.Println("ERROR: Timed out waiting for Arduino STM32 on on " + *com_port)
 		os.Exit(1)
 	}
 
