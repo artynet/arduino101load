@@ -1,4 +1,4 @@
-module github.com/facchinm/arduino101load
+module github.com/artynet/arduino101load
 
 go 1.13
 
