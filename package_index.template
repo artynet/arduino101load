@@ -17,7 +17,7 @@
               "checksum": "SHA-256:%%SHA_LINUX_ARM%%"
             },
             {
-              "host": "arm64-linux-gnu",
+              "host": "aarch64-linux-gnu",
               "url": "http://downloads.arduino.org/tools/%%FILENAME_LINUX_ARM64%%",
               "archiveFileName": "%%FILENAME_LINUX_ARM64%%",
               "size": "%%SIZE_LINUX_ARM64%%",
@@ -50,6 +50,13 @@
               "archiveFileName": "%%FILENAME_WINDOWS_386%%",
               "size": "%%SIZE_WINDOWS_386%%",
               "checksum": "SHA-256:%%SHA_WINDOWS_386%%"
+            },
+            {
+              "host": "i686-w64-mingw32",
+              "url": "http://downloads.arduino.org/tools/%%FILENAME_WINDOWS_AMD64%%",
+              "archiveFileName": "%%FILENAME_WINDOWS_AMD64%%",
+              "size": "%%SIZE_WINDOWS_AMD64%%",
+              "checksum": "SHA-256:%%SHA_WINDOWS_AMD64%%"
             }
           ]
         }
