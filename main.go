@@ -100,7 +100,7 @@ func main_load() {
 		}
 		if counter == 40 {
 			fmt.Println("Flashing is taking longer than expected")
-			fmt.Println("Try pressing MASTER_RESET button")
+			fmt.Println("Try pressing RESET_MCU button")
 		}
 		if found == true {
 			board_found = true
