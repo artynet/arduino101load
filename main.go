@@ -29,7 +29,7 @@ var (
 	com_port               = flag.String("port", "", "Upload serial port")
 )
 
-const Version = "2.2.2"
+const Version = "2.2.3"
 
 const dfu_flags = "-d,0483:df11"
 
